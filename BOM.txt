@@ -1,0 +1,33 @@
+#Bill of materials for a 3 floor version
+
+Electrical components:
+
+(1)  - ESP32-VROOM-32D devkit USB-C
+(1)  - Power supply and USB-C cable
+
+(3)  - LM393 H2010 photoelectric sensor (one for each floor)
+
+(9)  - Green LED (the amount of floors for each floor)
+(3)  - Yellow LED (one for each floor)
+(12) - 220 ohm resistor (one for each LED light)
+
+(3)  - Pushbutton (one for each floor)
+(3)  - 10K ohm resistor (one for each pushbutton)
+
+(2)  - 10K ohm potentiometer
+(2)  - 25V 100uF capacitor
+
+(1)  - 9V DC brushless motor
+(1)  - L293D or L298N H-bridge motor driver
+
+(1)  - 9V battery (for the DC motor)
+(1)  - Power switch
+
+Other hardware:
+
+()  - Prototype PCB
+()  - 18AWG Wire (different colors)
+()  - Heat shrink tubing
+()  - Soldering
+()  - Male/female pin connectors
+()  - Pulley/rope/cabin/counterweight system
