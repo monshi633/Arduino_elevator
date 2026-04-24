@@ -19,28 +19,28 @@ const int floorLEDPin_2 = 10;
 const int floorLEDPin_3 = 11;
 const int floorLEDPinArray[] = {floorLEDPin_1, floorLEDPin_2, floorLEDPin_3};
 int floorLEDValueArray[] = {0,0,0};
+const int fadeStep = 5, fadePeriod = 30;
+unsigned long fadePreviousMillis = 0;
 
 // Floor switches - Indicates when the elevator arrived to each floor
 const int floorSwitchPin_1 = A1;
 const int floorSwitchPin_2 = A2;
 const int floorSwitchPin_3 = A3;
 const int floorSwitchPinArray[] = {floorSwitchPin_1, floorSwitchPin_2, floorSwitchPin_3};
-int floorSwitchValue_1 = 0;
-int floorSwitchValue_2 = 0;
-int floorSwitchValue_3 = 0;
+int floorSwitchValue_1 = LOW;
 
 // Motor direction
 const int motorUpPin = 5; // Clockwise means up
 const int motorDownPin = 6; // Counter clockwise means down
 
-// Potentiometers - Allows to live-tweak with motor speed
+// Potentiometers - Allows to live-tweak motor speeds
 const int potentiometerUpPin = A4;
 const int potentiometerDownPin = A5;
 int motorUpSpeed = 0;
 int motorDownSpeed = 0;
 
 // Logic elements
-const int queueSize = 3; // Equal to the number of floors/buttons/lights
+const int queueSize = 3; // Equal to the number of floors
 int elevatorQueue[queueSize]; // Initializes an array representing the queue
 int elevatorPosition = 0; // Current floor the elevator is in
 int destinationFloor = 0; // Next floor the elevator has to go to
@@ -89,16 +89,6 @@ void moveElevator() {
 
   int targetFloorSwitchValue = digitalRead(floorSwitchPinArray[destinationFloor - 1]);
 
-  // Serial.println("Closing doors...");
-  // delay(1000);
-  // Serial.println(".");
-  // delay(1000);
-  // Serial.println(".");
-  // delay(1000);
-  // Serial.println(".");
-  // delay(1000);
-  // Serial.println(".");
-
   if (targetFloorSwitchValue == 0) { // if the corresponding floorSwitch isnt' triggered
     if (direction) {
       Serial.println("Going up");
@@ -125,7 +115,7 @@ void moveElevator() {
     }
     elevatorQueue[queueSize - 1] = 0; // Last position is always empty
 
-    delay(2000);
+    // delay(2000); // TODO: This interferes with floor LED lights, so I need to adapt this function to millis() too
   }
 }
 
@@ -162,10 +152,11 @@ void setup() {
   pinMode(potentiometerUpPin,INPUT);
   pinMode(potentiometerDownPin,INPUT);
 
-  // Move the elevator to ground floor. This ensures the elevator's position wíll be known before starting the loop.
   delay(2000); // Give the board time to execute the following code, otherwise it just skips it.
+  
+  // Move the elevator to ground floor. This ensures the elevator's position wíll be known before starting the loop.
   digitalWrite(buttonLEDPin_1,HIGH); // Turn ground floor light as if the elevator was called
-  while (floorSwitchValue_1 == 0) { // As long as the ground floor switch isn't triggered
+  while (floorSwitchValue_1 == LOW) { // As long as the ground floor switch isn't triggered
     floorSwitchValue_1 = digitalRead(floorSwitchPin_1); // Read switch value
     motorDownSpeed = analogRead(potentiometerDownPin); // Read potentiometer to control speed
     Serial.print("Going to ground floor at speed: ");
@@ -178,18 +169,11 @@ void setup() {
 }
 
 void loop() {
-  Serial.print("\n\nStarting loop\nFloor switches values: ");
-
-  // Read inputs
-  floorSwitchValue_1 = digitalRead(floorSwitchPin_1);
-  floorSwitchValue_2 = digitalRead(floorSwitchPin_2);
-  floorSwitchValue_3 = digitalRead(floorSwitchPin_3);
   motorUpSpeed = analogRead(potentiometerUpPin);
   motorDownSpeed = analogRead(potentiometerDownPin);
-
   destinationFloor = elevatorQueue[0];
   direction = destinationFloor > elevatorPosition ? true : false; // Define motor's direction: true is up, false is down
-
+  
   // Read buttons
   for (int i = 0; i < queueSize; i++) { // For each floor
     if (digitalRead(buttonPinArray[i]) == HIGH) { // If the button is pressed
@@ -197,50 +181,33 @@ void loop() {
     }
   }
 
-  // Elevator position lights - just turn on, no fade but it works without issues
-  // for (int i = 0; i < queueSize; i++) { // For each floor
-  //   digitalWrite(floorLEDArray[i],LOW); // Turn off all LEDs
-  //   if (digitalRead(floorSwitchArray[i]) == 1) {
-  //     digitalWrite(floorLEDArray[i],HIGH);
-  //   }
-  // }
-  for (int i = 0; i < queueSize; i++) { // For each floor
-    // Fade in
-    if (digitalRead(floorSwitchPinArray[i]) == 1 && floorLEDValueArray[i] < 255) { // If the switch is active and the light isn't already on
-      for (int j = 0; j <= 255; j += 5) {
-        floorLEDValueArray[i] = j;
+  // Move the elevator to the next floor in queue
+  moveElevator();
+
+  // Elevator position lights fade
+  unsigned long fadeCurrentMillis = millis();
+
+  if (fadeCurrentMillis - fadePreviousMillis >= fadePeriod) {
+    fadePreviousMillis = fadeCurrentMillis;
+
+    for (int i = 0; i < queueSize; i++) { // For each floor
+      // Fade in
+      if (digitalRead(floorSwitchPinArray[i]) == HIGH && floorLEDValueArray[i] < 255) { // If the switch is active and the light isn't already on
+        floorLEDValueArray[i] += fadeStep;
         analogWrite(floorLEDPinArray[i], floorLEDValueArray[i]);
-        delay(30); // TODO: replace delay for milis
       }
-    }
-    // Fade out
-    if (digitalRead(floorSwitchPinArray[i]) == 0 && floorLEDValueArray[i] > 0) { // If the switch is NOT active and the light is still on
-      for (int j = 255; j >= 0; j -= 5) {
-        floorLEDValueArray[i] = j;
+      // Fade out
+      if (digitalRead(floorSwitchPinArray[i]) == LOW && floorLEDValueArray[i] > 0) { // If the switch is NOT active and the light is still on
+        floorLEDValueArray[i] -= fadeStep;
         analogWrite(floorLEDPinArray[i], floorLEDValueArray[i]);
-        delay(30); // TODO: replace delay for milis
       }
     }
   }
-
-  Serial.print(floorSwitchValue_1);
-  Serial.print(", ");
-  Serial.print(floorSwitchValue_2);
-  Serial.print(", ");
-  Serial.println(floorSwitchValue_3);
-  Serial.print("Motor speed: Up: ");
-  Serial.print(motorUpSpeed);
-  Serial.print(", Down: ");
-  Serial.println(motorDownSpeed);
-
-  // Move the elevator to the next floor in queue
-  moveElevator();
 
   // Print queue status
   Serial.print("Queue status: ");
   for (int i = 0; i < queueSize; i++) {
     Serial.print(elevatorQueue[i]);
   }
-
-  delay(500);
+  Serial.println();
 }
