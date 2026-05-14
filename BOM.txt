@@ -17,8 +17,9 @@ Electrical components:
 (2)  - 10K ohm potentiometer
 (2)  - 25V 100uF capacitor
 
-(1)  - 9V DC brushless motor
-(1)  - L293D or L298N H-bridge motor driver
+(1)  - 9V DC brushless motor with 2mm axis diameter
+(1)  - 2mm flange coupling connector (to attach 3D printed main pulley)
+(1)  - L298N mini H-bridge motor driver
 
 (1)  - 9V battery (for the DC motor)
 (1)  - Power switch
@@ -26,7 +27,7 @@ Electrical components:
 Other hardware:
 
 ()  - Prototype PCB
-()  - 18AWG Wire (different colors)
+()  - 28AWG Wire (different colors)
 ()  - Heat shrink tubing
 ()  - Soldering
 ()  - Male/female pin connectors
